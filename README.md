@@ -1,5 +1,9 @@
 # Dockerized Web App (Flask + PostgreSQL)
 
+
+# Dockerized Web App ...
+![CI](https://github.com/miodragkjuka/docker-webapp/actions/workflows/ci.yml/badge.svg)
+
 A small web app that counts page visits and stores the count in a PostgreSQL database. The web app and the database run as two containers, started together with Docker Compose. I built it inside an Ubuntu Server VM from my [Proxmox homelab](https://github.com/miodragkjuka/proxmox-homelab).
 
 ## How it works
@@ -54,6 +58,20 @@ curl localhost:5000
 I ran `docker compose down` (which removes the containers) and then `docker compose up -d`. The counter continued from where it was instead of resetting to 1, because the data is stored in the `db_data` volume.
 
 ![Counter after restart](images/restart-persist.png)
+
+## CI pipeline (GitHub Actions)
+
+Every push to `master` runs a workflow (`.github/workflows/ci.yml`) that:
+
+1. Checks out the code
+2. Creates a test `.env` file
+3. Builds the image and starts both containers with Docker Compose
+4. Calls the app with `curl` and checks that the page says "Hello from Docker"
+5. Stops and removes the containers
+
+If any step fails, the run turns red and the logs show what broke.
+
+![Successful CI run](images/actions-job.png)
 
 ## What went wrong and how I fixed it
 
