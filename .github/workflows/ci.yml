@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Create .env for the test
+        run: echo "DB_PASSWORD=ci-test-password" > .env
+
+      - name: Build and start the containers
+        run: docker compose up -d --build
+
+      - name: Test that the app responds
+        run: |
+          for i in $(seq 1 15); do
+            if curl -fs localhost:5000 | grep -q "Hello from Docker"; then
+              echo "App is up and responding"
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs
+          exit 1
+
+      - name: Stop the containers
+        if: always()
+        run: docker compose down -v
