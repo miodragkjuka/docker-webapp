@@ -59,30 +59,33 @@ I ran `docker compose down` (which removes the containers) and then `docker comp
 
 ![Counter after restart](images/restart-persist.png)
 
-## CI pipeline (GitHub Actions)
+## CI/CD pipeline (GitHub Actions and AWS EC2)
 
-Every push to `master` runs a workflow (`.github/workflows/ci.yml`) that:
+Every push to `master` runs a workflow (`.github/workflows/ci.yml`) with two jobs:
 
+**1. build-and-test**
 1. Checks out the code
 2. Creates a test `.env` file
 3. Builds the image and starts both containers with Docker Compose
 4. Calls the app with `curl` and checks that the page says "Hello from Docker"
 5. Stops and removes the containers
 
-If any step fails, the run turns red and the logs show what broke.
+**2. deploy** (runs only if the tests pass, and only on `master`)
+1. Connects to an AWS EC2 server (Ubuntu, `t3.micro`) over SSH
+2. Pulls the latest code and runs `docker compose up -d --build`
 
-![Successful CI run](images/actions-job.png)
+The server address and SSH key are stored as GitHub Secrets, not in the code.
 
-## What went wrong and how I fixed it
+![Successful CI/CD run](images/actions-cicd.png)
 
-- **SSH timed out.** My VM got a new IP address from the router (`192.168.0.15` became `192.168.0.19`). I checked the current address with `ip a` in the Proxmox console and connected to the new one. A fixed (static) IP would prevent this.
-- **Docker needed a re-login.** After adding my user to the `docker` group, the change only took effect after logging out and back in.
-- **Startup order.** The web app can start before PostgreSQL is ready. I solved this with a healthcheck on the database and `depends_on: condition: service_healthy`, plus a retry loop in the app.
+### Deployed on AWS
 
-## What I learned
+The app running on the EC2 instance:
 
-- Writing a Dockerfile and building an image
-- Running multiple containers with Docker Compose
-- Persisting data with volumes
-- Keeping secrets out of Git with `.env` and `.gitignore`
-- Container networking: the web app reaches the database by its service name, `db`
+![App running on AWS](images/aws-webpage.png)
+
+I then changed the greeting in `app.py` on GitHub. The pipeline tested it and deployed it by itself, and the live page updated without me touching the server.
+
+![Pipeline run after the change](images/actions-deploy-greeting.png)
+
+![Updated page on AWS](images/aws-webpage-updated.png)
