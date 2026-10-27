@@ -33,7 +33,7 @@ def index():
         cur.execute("SELECT COUNT(*) FROM visits")
         count = cur.fetchone()[0]
     conn.close()
-    return f"Hello from Docker! This page has been visited {count} times.\n"
+    return f"Hello from Docker on AWS! This page has been visited {count} times.\n"
 
 init_db()
 
