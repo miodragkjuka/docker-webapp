@@ -89,3 +89,22 @@ I then changed the greeting in `app.py` on GitHub. The pipeline tested it and de
 ![Pipeline run after the change](images/actions-deploy-greeting.png)
 
 ![Updated page on AWS](images/aws-webpage-updated.png)
+
+## What went wrong and how I fixed it
+
+- **SSH timed out.** My VM got a new IP address from the router (`192.168.0.15` became `192.168.0.19`). I checked the current address with `ip a` in the Proxmox console and connected to the new one. A fixed (static) IP would prevent this.
+- **Docker needed a re-login.** After adding my user to the `docker` group, the change only took effect after logging out and back in.
+- **Startup order.** The web app can start before PostgreSQL is ready. I solved this with a healthcheck on the database and `depends_on: condition: service_healthy`, plus a retry loop in the app.
+- **EC2 page didn't load at first.** The security group only allowed ports 22 and 443. I added an inbound rule for TCP port 5000.
+- **Default OS was Amazon Linux.** I chose Ubuntu instead, so the commands match my VM.
+
+## What I learned
+
+- Writing a Dockerfile and building an image
+- Running multiple containers with Docker Compose
+- Persisting data with volumes
+- Keeping secrets out of Git with `.env` and `.gitignore`
+- Container networking: the web app reaches the database by its service name, `db`
+- Automating tests and deployment with GitHub Actions
+- Launching and securing an AWS EC2 server (security groups, SSH key pair)
+- Storing credentials as GitHub Secrets instead of putting them in code
